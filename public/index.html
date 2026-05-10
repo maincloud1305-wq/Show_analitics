@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - Telegram Bot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="background-blobs"></div>
+    
+    <nav class="navbar">
+        <div class="logo">BotAnalytics</div>
+        <div class="nav-links">
+            <button id="export-btn" class="btn btn-primary">Выгрузить CSV</button>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Summary Cards -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <h3>Всего пользователей</h3>
+                <p id="total-users">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Купили</h3>
+                <p id="purchased-users">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Конверсия</h3>
+                <p id="conversion-rate">0%</p>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="charts-section">
+            <div class="chart-container">
+                <h3>Распределение покупок</h3>
+                <canvas id="purchaseChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Этапы воронки (Last Step)</h3>
+                <canvas id="funnelChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Data Table Section -->
+        <section class="table-section">
+            <div class="table-header">
+                <h2>Список пользователей</h2>
+                <div class="filters">
+                    <input type="text" id="search-input" placeholder="Поиск по ID или Username...">
+                    <select id="filter-select">
+                        <option value="all">Все</option>
+                        <option value="purchased">Купившие</option>
+                        <option value="not_purchased">Не купившие</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table id="users-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Статус</th>
+                            <th>Дата покупки</th>
+                            <th>Последний шаг</th>
+                            <th>Дата регистрации</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
