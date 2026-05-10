@@ -48,9 +48,16 @@ async function loadUsers() {
         const res = await fetch(`/api/users?search=${encodeURIComponent(search)}&filter=${filter}`);
         if (res.status === 401) return window.location.href = '/login.html';
         const users = await res.json();
-        
         const tbody = document.querySelector('#users-table tbody');
         tbody.innerHTML = '';
+
+        if (!Array.isArray(users)) {
+            console.error('Ошибка от API:', users);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td colspan="7" style="text-align:center; color:#ef4444; padding:2rem;">Ошибка загрузки данных: ${users.error || 'Неизвестная ошибка'}</td>`;
+            tbody.appendChild(tr);
+            return;
+        }
         
         users.forEach(user => {
             const tr = document.createElement('tr');
@@ -134,25 +141,24 @@ async function exportToCSV() {
         const data = await res.json();
         if (data.length === 0) return alert('Нет данных для выгрузки');
 
-        // Определение понятных заголовков и порядка колонок
+        // Определение четкого порядка и названий колонок по вашему запросу
         const headerMapping = {
-            'telegram_id': 'ID Телеграм',
-            'username': 'Имя пользователя',
-            'phone': 'Телефон',
-            'has_purchased': 'Статус покупки',
-            'purchase_date': 'Дата покупки',
-            'last_step': 'Последний шаг',
-            'funnel_status': 'История воронки / Выбор',
-            'created_at': 'Дата регистрации',
-            'id': 'Внутренний ID'
+            'created_at': 'Время входа',
+            'username': 'Юзернейм',
+            'phone': 'Номер телефона',
+            'last_step': 'Этап остановки',
+            'has_purchased': 'Купил или нет',
+            'payment_method': 'Как купил',
+            'purchase_date': 'Дата оплаты',
+            'telegram_id': 'Telegram ID',
+            'funnel_status': 'Все действия (лог)'
         };
 
-        // Берем все ключи из первого объекта, но приоритизируем те, что в mapping
-        const allKeys = Object.keys(data[0]);
-        const headers = Object.keys(headerMapping).filter(k => allKeys.includes(k));
+        // Берем только нужные ключи в правильном порядке
+        const headers = Object.keys(headerMapping).filter(k => Object.keys(data[0]).includes(k));
         
-        // Добавляем остальные ключи, которых нет в mapping
-        allKeys.forEach(k => {
+        // Добавляем остальные технические поля в конец, если они есть
+        Object.keys(data[0]).forEach(k => {
             if (!headers.includes(k)) headers.push(k);
         });
 
@@ -161,20 +167,22 @@ async function exportToCSV() {
             ...data.map(row => headers.map(header => {
                 let val = row[header];
                 
-                // Форматирование булевых значений
+                // Форматирование статуса покупки
                 if (header === 'has_purchased') {
-                    val = val ? 'Купил' : 'Нет';
+                    val = val ? 'ДА (Купил)' : 'НЕТ';
                 }
                 
                 // Форматирование дат
-                if (val && (header.includes('date') || header.includes('_at'))) {
+                if (val && (header === 'created_at' || header === 'purchase_date')) {
                     val = new Date(val).toLocaleString('ru-RU');
                 }
 
                 if (val === null || val === undefined) val = '';
                 
-                // Экранирование строк
+                // Экранирование и очистка текста (чтобы лог действий не ломал таблицу)
                 if (typeof val === 'string') {
+                    // Убираем лишние переносы строк для CSV
+                    val = val.replace(/\n/g, ' ').replace(/\r/g, ' ');
                     val = `"${val.replace(/"/g, '""')}"`;
                 }
                 return val;

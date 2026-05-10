@@ -132,7 +132,7 @@ app.get('/api/users', async (req, res) => {
   console.log('Fetching users...');
   try {
     const { search, filter } = req.query;
-    let query = 'SELECT telegram_id, username, phone, has_purchased, purchase_date, last_step, funnel_status, created_at FROM users';
+    let query = 'SELECT * FROM users';
     const params = [];
 
     const conditions = [];
@@ -155,7 +155,10 @@ app.get('/api/users', async (req, res) => {
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
-    console.error('Database error in /api/users:', err.message);
+    console.error('DATABASE ERROR in /api/users:');
+    console.error('Message:', err.message);
+    console.error('Query:', query);
+    console.error('Params:', params);
     res.status(500).json({ error: 'Database error', details: err.message });
   }
 });
