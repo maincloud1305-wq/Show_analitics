@@ -135,20 +135,20 @@ app.get('/api/users', async (req, res) => {
     let query = 'SELECT telegram_id, username, has_purchased, purchase_date, last_step, funnel_status, created_at FROM users';
     const params = [];
 
-    if (search || filter) {
-      query += ' WHERE ';
-      if (search) {
-        query += '(username ILIKE $1 OR telegram_id::text ILIKE $1)';
-        params.push(`%${search}%`);
-      }
-      if (filter) {
-        if (search) query += ' AND ';
-        if (filter === 'purchased') {
-          query += 'has_purchased = true';
-        } else if (filter === 'not_purchased') {
-          query += 'has_purchased = false';
-        }
-      }
+    const conditions = [];
+    if (search) {
+      conditions.push(`(username ILIKE $${params.length + 1} OR telegram_id::text ILIKE $${params.length + 1})`);
+      params.push(`%${search}%`);
+    }
+    
+    if (filter === 'purchased') {
+      conditions.push('has_purchased = true');
+    } else if (filter === 'not_purchased') {
+      conditions.push('has_purchased = false');
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
     }
 
     query += ' ORDER BY created_at DESC';
