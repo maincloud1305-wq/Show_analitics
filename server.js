@@ -132,7 +132,7 @@ app.get('/api/users', async (req, res) => {
   console.log('Fetching users...');
   try {
     const { search, filter } = req.query;
-    let query = 'SELECT telegram_id, username, has_purchased, purchase_date, last_step, funnel_status, created_at FROM users';
+    let query = 'SELECT telegram_id, username, phone, has_purchased, purchase_date, last_step, funnel_status, created_at FROM users';
     const params = [];
 
     const conditions = [];

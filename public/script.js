@@ -57,6 +57,7 @@ async function loadUsers() {
             tr.innerHTML = `
                 <td>${user.telegram_id}</td>
                 <td>${user.username || '—'}</td>
+                <td>${user.phone || '—'}</td>
                 <td><span class="status-badge ${user.has_purchased ? 'status-purchased' : 'status-none'}">${user.has_purchased ? 'Купил' : 'Нет'}</span></td>
                 <td>${user.purchase_date ? new Date(user.purchase_date).toLocaleDateString() : '—'}</td>
                 <td>${user.last_step || '—'}</td>
@@ -137,6 +138,7 @@ async function exportToCSV() {
         const headerMapping = {
             'telegram_id': 'ID Телеграм',
             'username': 'Имя пользователя',
+            'phone': 'Телефон',
             'has_purchased': 'Статус покупки',
             'purchase_date': 'Дата покупки',
             'last_step': 'Последний шаг',
