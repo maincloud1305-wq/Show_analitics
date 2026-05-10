@@ -1,6 +1,7 @@
 const express = require('express');
 const { Pool } = require('pg');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const app = express();
@@ -23,6 +24,9 @@ const pool = new Pool({
   ssl: connectionString.includes('railway.internal') || connectionString.includes('localhost') ? false : { rejectUnauthorized: false }
 });
 
+app.use(express.json());
+app.use(cookieParser('analytics-dashboard-secret')); // You can move secret to .env
+
 // Authentication Middleware
 const auth = (req, res, next) => {
   const adminUser = process.env.ADMIN_USERNAME;
@@ -33,26 +37,50 @@ const auth = (req, res, next) => {
     return next();
   }
 
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    res.setHeader('WWW-Authenticate', 'Basic realm="Admin Dashboard"');
-    return res.status(401).send('Authentication required');
-  }
-
-  const base64Credentials = authHeader.split(' ')[1];
-  const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
-  const [username, password] = credentials.split(':');
-
-  if (username === adminUser && password === adminPass) {
+  // Check for auth cookie
+  if (req.cookies && req.cookies.auth_token === 'authenticated') {
     return next();
-  } else {
-    res.setHeader('WWW-Authenticate', 'Basic realm="Admin Dashboard"');
-    return res.status(401).send('Invalid credentials');
   }
+
+  // If requesting an API, return 401
+  if (req.url.startsWith('/api') && req.url !== '/api/login') {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  // If requesting a page, redirect to login
+  if (!req.url.includes('.') || req.url.endsWith('.html')) {
+    if (req.url !== '/login.html') {
+      return res.redirect('/login.html');
+    }
+  }
+
+  next();
 };
 
-// Apply auth to all routes except public assets if you want, 
-// but usually it's better to protect everything.
+// Login API
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  const adminUser = process.env.ADMIN_USERNAME;
+  const adminPass = process.env.ADMIN_PASSWORD;
+
+  if (username === adminUser && password === adminPass) {
+    res.cookie('auth_token', 'authenticated', { 
+      httpOnly: true, 
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    });
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ error: 'Invalid credentials' });
+  }
+});
+
+// Logout API
+app.get('/api/logout', (req, res) => {
+  res.clearCookie('auth_token');
+  res.redirect('/login.html');
+});
+
+// Apply auth to all routes
 app.use(auth);
 
 app.use((req, res, next) => {
@@ -61,7 +89,6 @@ app.use((req, res, next) => {
 });
 
 app.use(express.static('public'));
-app.use(express.json());
 
 // API: Summary Statistics
 app.get('/api/stats', async (req, res) => {
@@ -124,7 +151,7 @@ app.get('/api/users', async (req, res) => {
       }
     }
 
-    query += ' ORDER BY created_at DESC LIMIT 100';
+    query += ' ORDER BY created_at DESC';
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {

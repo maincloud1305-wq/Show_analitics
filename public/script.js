@@ -14,6 +14,7 @@ let purchaseChart, funnelChart;
 async function loadStats() {
     try {
         const res = await fetch('/api/stats');
+        if (res.status === 401) return window.location.href = '/login.html';
         const data = await res.json();
         
         document.getElementById('total-users').innerText = data.total_users;
@@ -31,6 +32,7 @@ async function loadStats() {
 async function loadFunnel() {
     try {
         const res = await fetch('/api/funnel');
+        if (res.status === 401) return window.location.href = '/login.html';
         const data = await res.json();
         renderFunnelChart(data);
     } catch (err) {
@@ -44,6 +46,7 @@ async function loadUsers() {
     
     try {
         const res = await fetch(`/api/users?search=${encodeURIComponent(search)}&filter=${filter}`);
+        if (res.status === 401) return window.location.href = '/login.html';
         const users = await res.json();
         
         const tbody = document.querySelector('#users-table tbody');
@@ -121,25 +124,66 @@ function renderFunnelChart(data) {
 async function exportToCSV() {
     try {
         const res = await fetch('/api/export');
-        const data = await res.json();
         
+        if (res.status === 401) {
+            window.location.href = '/login.html';
+            return;
+        }
+
+        const data = await res.json();
         if (data.length === 0) return alert('Нет данных для выгрузки');
 
-        const headers = Object.keys(data[0]);
+        // Определение понятных заголовков и порядка колонок
+        const headerMapping = {
+            'telegram_id': 'ID Телеграм',
+            'username': 'Имя пользователя',
+            'has_purchased': 'Статус покупки',
+            'purchase_date': 'Дата покупки',
+            'last_step': 'Последний шаг',
+            'funnel_status': 'История воронки / Выбор',
+            'created_at': 'Дата регистрации',
+            'id': 'Внутренний ID'
+        };
+
+        // Берем все ключи из первого объекта, но приоритизируем те, что в mapping
+        const allKeys = Object.keys(data[0]);
+        const headers = Object.keys(headerMapping).filter(k => allKeys.includes(k));
+        
+        // Добавляем остальные ключи, которых нет в mapping
+        allKeys.forEach(k => {
+            if (!headers.includes(k)) headers.push(k);
+        });
+
         const csvContent = [
-            headers.join(','),
+            headers.map(h => headerMapping[h] || h).join(','),
             ...data.map(row => headers.map(header => {
-                let val = row[header] === null ? '' : row[header];
-                if (typeof val === 'string') val = `"${val.replace(/"/g, '""')}"`;
+                let val = row[header];
+                
+                // Форматирование булевых значений
+                if (header === 'has_purchased') {
+                    val = val ? 'Купил' : 'Нет';
+                }
+                
+                // Форматирование дат
+                if (val && (header.includes('date') || header.includes('_at'))) {
+                    val = new Date(val).toLocaleString('ru-RU');
+                }
+
+                if (val === null || val === undefined) val = '';
+                
+                // Экранирование строк
+                if (typeof val === 'string') {
+                    val = `"${val.replace(/"/g, '""')}"`;
+                }
                 return val;
             }).join(','))
         ].join('\n');
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
-        link.setAttribute('download', `users_export_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute('download', `analytics_export_${new Date().toISOString().split('T')[0]}.csv`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();

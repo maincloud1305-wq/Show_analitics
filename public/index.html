@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
     <div class="background-blobs"></div>
@@ -17,6 +18,7 @@
         <div class="logo">BotAnalytics</div>
         <div class="nav-links">
             <button id="export-btn" class="btn btn-primary">Выгрузить CSV</button>
+            <a href="/api/logout" class="btn btn-secondary">Выйти</a>
         </div>
     </nav>
 
@@ -24,16 +26,25 @@
         <!-- Summary Cards -->
         <section class="stats-grid">
             <div class="stat-card">
-                <h3>Всего пользователей</h3>
-                <p id="total-users">0</p>
+                <div class="stat-icon users"><i data-lucide="users"></i></div>
+                <div class="stat-content">
+                    <h3>Всего пользователей</h3>
+                    <p id="total-users">0</p>
+                </div>
             </div>
             <div class="stat-card">
-                <h3>Купили</h3>
-                <p id="purchased-users">0</p>
+                <div class="stat-icon success"><i data-lucide="shopping-cart"></i></div>
+                <div class="stat-content">
+                    <h3>Купили</h3>
+                    <p id="purchased-users">0</p>
+                </div>
             </div>
             <div class="stat-card">
-                <h3>Конверсия</h3>
-                <p id="conversion-rate">0%</p>
+                <div class="stat-icon warning"><i data-lucide="trending-up"></i></div>
+                <div class="stat-content">
+                    <h3>Конверсия</h3>
+                    <p id="conversion-rate">0%</p>
+                </div>
             </div>
         </section>
 
@@ -83,5 +94,9 @@
     </main>
 
     <script src="script.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
 </body>
 </html>
